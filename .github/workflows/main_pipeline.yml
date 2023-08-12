@@ -33,3 +33,37 @@ jobs:
       env:
         username: "VasStud"
       run: echo "$username"
+  
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+    - name: Deploy to Production
+      uses: johnbeynon/render-deploy-action@v0.0.8
+      with:
+          api-key: ${{ secrets.RENDER_API_KEY }}
+          service-id: ${{ secrets.SERVICE_ID }}
+              
+  ui_test:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    strategy:
+      matrix:
+        node-version: [14.x]
+        
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Installing npm
+      run: npm install
+      
+    - name: Install playwright browsers
+      run: npx playwright install --with-deps
+    
+    - name: Runing the ui tests
+      run: npm run test:ui
